@@ -1,16 +1,15 @@
-
 const fetch = require('node-fetch');
 const mime = require('mime-types');
 
 class FileValidator {
   static async validatePublicUrl(url, fileName) {
-    const maxRetries = 3;
+    const maxRetries = 10;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         // Get MIME type from filename as fallback
         const mimeType = mime.lookup(fileName) || 'application/octet-stream';
-        
+
         // Safer than HEAD — avoids S3 signed URL issues
         const res = await fetch(url, {
           method: 'GET',
@@ -21,14 +20,14 @@ class FileValidator {
           const contentType = res.headers.get('content-type') || mimeType;
           return {
             isValid: FileValidator.isValidFileType(contentType),
-            contentType
+            contentType,
           };
         }
 
         if (res.status === 403) {
           console.warn(`[${attempt}] 403 Forbidden for ${url}`);
           if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+            await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
             continue;
           }
 
@@ -36,7 +35,7 @@ class FileValidator {
           console.warn(`⚠️ Bypassing validation after multiple 403s for ${url}`);
           return {
             isValid: FileValidator.isValidFileType(mimeType),
-            contentType: mimeType
+            contentType: mimeType,
           };
         }
 
@@ -46,7 +45,7 @@ class FileValidator {
         if (attempt === maxRetries) {
           throw new Error(`URL validation failed: ${err.message}`);
         }
-        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
       }
     }
   }
@@ -75,6 +74,7 @@ class FileValidator {
       'audio/aac',
       'audio/ogg',
       'audio/flac',
+      'application/rtf',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

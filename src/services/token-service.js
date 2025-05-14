@@ -5,7 +5,7 @@ const tokenCache = new Map();
 const tokenLocks = new Map();
 
 class TokenService {
-  static async getToken(itemId, initialToken) {
+  static async getToken(itemId) {
     const cached = tokenCache.get(itemId);
     if (cached) {
       if (Date.now() - cached.timestamp < 45 * 60 * 1000) {
@@ -24,11 +24,11 @@ class TokenService {
       } catch (error) {
         console.error('Token refresh failed:', error);
         tokenCache.delete(itemId);
+        throw new Error('Failed to get valid token');
       }
     }
 
-    // No cached token or refresh failed, use initial token
-    return initialToken;
+    throw new Error('No token available - OAuth flow required');
   }
 
   static setTokens(itemId, accessToken, refreshToken) {
